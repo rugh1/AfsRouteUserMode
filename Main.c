@@ -14,7 +14,8 @@ struct sockaddr_in* cacheMangaer;
 enum MsgType {
     PID,
     OPEN,
-    WRITE,
+    WRITE1,
+    WRITE2,
     CREATE,
     DEL
 };
@@ -91,7 +92,7 @@ int talkToCache(enum MsgType state, USHORT len, PWCHAR data) {
     }
 
     char* buff;
-    
+    int i;
 
     int lengthBuffer;
     
@@ -99,36 +100,66 @@ int talkToCache(enum MsgType state, USHORT len, PWCHAR data) {
         case PID:
             buff = (char*)malloc(4);
             lengthBuffer = 4;
-            buff = "PID";
+            memchr(buff, 0, lengthBuffer);
+            strcpy_s(buff, lengthBuffer, "PID");
             break;
         case OPEN:    
             lengthBuffer = len + 6;
             buff = (char*)malloc(lengthBuffer);
-            buff = "open ";
-            int i = 5;
-            for (; i < lengthBuffer +6; i++) {
+            memchr(buff, 0, lengthBuffer);
+            strcpy_s(buff, 6, "open ");
+            i = 5;
+            for (; i < lengthBuffer; i++) {
                 buff[i] = (char)data[i-5];
             }
-            buff[i] = '\0';
-            printf("buffer %s", buff);
+            //buff[i] = '\0';
+            memchr(buff, 0, lengthBuffer);
+            break;
+        case WRITE1:
+            printf("write1");
+            lengthBuffer = len + 8;
+            buff = (char*)malloc(lengthBuffer);
+            memchr(buff, 0, lengthBuffer);
+            strcpy_s(buff, 8, "write1 ");
+            i = 7;
+            for (; i < lengthBuffer; i++) {
+                buff[i] = (char)data[i - 7];
+            }
+            //buff[i] = '\0';
+            //printf("buffer %s", buff);
+            break;
+        case WRITE2:
+            lengthBuffer = len + 7;
+            buff = (char*)malloc(lengthBuffer);
+            memchr(buff, 0, lengthBuffer);
+            strcpy_s(buff, 7, "write ");
+            i = 6;
+            for (; i < lengthBuffer; i++) {
+                buff[i] = (char)data[i - 6];
+            }
+            //buff[i] = '\0';
+            //printf("buffer %s", buff);
             break;
         default:
-            buff = (char*)malloc(11);
+            //buff = (char*)malloc(11);
             lengthBuffer = 11;
             buff = "open /dir2";
             break;
     }
-    printf("buffer %s", buff);
+    printf("buffer1 %s", buff);
 
     char* msg_to_send = (char*)createCacheMsg(buff, lengthBuffer); //create msg for cache manager
+    printf("buffer2 %s", buff);
     status = send(connectedSocket, msg_to_send, lengthBuffer + sizeof(cacheMsg), 0);
     char buffer[4];
     status = recv(connectedSocket, buffer, 4, 0);
     printf("\n %d ", *(INT*)buffer); 
+    int rdata = *(INT*)buffer;
     closesocket(connectedSocket);
     free(msg_to_send);
     WSACleanup();
-    return *(INT*)buffer;  //concerts char[] into int
+    free(buff);
+    return rdata;  //concerts char[] into int
 }
 
 
@@ -137,7 +168,9 @@ void HandleMessage(const BYTE* buffer, HANDLE hPort, ULONGLONG messageId) { //,
     printf("\nmsg type: %hu , msg len: %hu msg data: %S ", my_msg->state, my_msg->dataLength, my_msg->data);
     //needs to talk to cache manager
     int data = talkToCache(my_msg->state, my_msg->dataLength, my_msg->data); // talk to cache manager
-    printf("\n data to send in the reply : %d", data);
+    printf("\n  12345 data to send in the reply : %d", data);
+    //add msgs idk what i think about it 
+    
     AfsRouteReplyMsg reply;
     reply.ReplyHeader.Status = STATUS_SUCCESS;
     reply.ReplyHeader.MessageId = messageId;
