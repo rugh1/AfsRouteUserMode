@@ -170,6 +170,11 @@ void HandleMessage(const BYTE* buffer, HANDLE hPort, ULONGLONG messageId) { //,
     int data = talkToCache(my_msg->state, my_msg->dataLength, my_msg->data); // talk to cache manager
     printf("\n  12345 data to send in the reply : %d", data);
     //add msgs idk what i think about it 
+    if (my_msg->state == WRITE1) {
+        if (data == 255) {
+            MessageBox(NULL, L"Write Access Denied to File", L"Access Denied", MB_OK | MB_ICONWARNING);
+        }
+    }
     
     AfsRouteReplyMsg reply;
     reply.ReplyHeader.Status = STATUS_SUCCESS;
@@ -177,5 +182,11 @@ void HandleMessage(const BYTE* buffer, HANDLE hPort, ULONGLONG messageId) { //,
     reply.data = data; // set  custom data as needed
     printf("\n data to send in the reply : %d", reply.data);
     FilterReplyMessage(hPort, (PFILTER_REPLY_HEADER)&reply, sizeof(FILTER_REPLY_HEADER) + sizeof(INT)); // reply to driver msg
+
+    if (my_msg->state == WRITE1) {
+        if (data == 1) {
+            MessageBox(NULL, L"'Wrote successfully!", L"Write Worked", MB_OK | MB_ICONINFORMATION);
+        }
+    }
 }
 
